@@ -32,15 +32,20 @@ def ConfigsJSON():
     else:
         return configs
 
-
+# Função que verifica quando a/o senha/token da API esta prestes a expirar o prazo de validade
+# Esta informação encontra-se no arquivo configs.json e deve ser modificado diretamente no arquivo
+# Uma nova data de validade deve ser inserida também no arquivo
 def VerificaValidadeSenhaApi():
     dif_tempo = datetime.strptime(ConfigsJSON()['VALIDADE_SENHA_API'],
                                   '%d/%m/%Y %H:%M:%S') - datetime.strptime(datetime.now().strftime('%d/%m/%Y %H:%M:%S'),
                                                                            '%d/%m/%Y %H:%M:%S')
-    conteudo_chamado = 'A/O senha/token de API do Operador {} vence em 3 dias! Considere renova-la e atualiza-la no arquivo configs.json.'.format(ConfigsJSON()['USUARIO_API'])
+    conteudo_chamado = 'A/O senha/token de API do Operador {} vence em 3 dias! Considere renova-la e atualiza-la no arquivo configs.json.'.format(
+        ConfigsJSON()['USUARIO_API'])
 
     if dif_tempo.days <= 3:
-        Abre_Chamado(Conexao_API(ConfigsJSON()), socket.gethostname(), conteudo_chamado, f'{socket.gethostname()} - Token/Senha da API próxima de expirar')
+        Abre_Chamado(Conexao_API(ConfigsJSON()), socket.gethostname(), conteudo_chamado,
+                     f'{socket.gethostname()} - Token/Senha da API próxima de expirar')
+
 
 # Função limpa pasta %temp% do terminal
 def LimpaTemp(dir):
@@ -155,7 +160,6 @@ def Abre_Chamado(topdesk, hostname, conteudo_chamado, breve_descrição):
 
             }
             # Criação do chamado incidente
-            print(ConfigsJSON()['SOLICITANTE'])
             chamado = topdesk.incident.create('servicedeskbot@aviva.com.br', **incident_parm)
             # Registra no arquivo de log o valor do chamado
             log.info(f'Foi aberto o chamado {chamado["number"]}')
@@ -226,9 +230,8 @@ def Busca_Terminais_Inativo(topdesk):
         cwd = os.getcwd()
         df_terminais = pd.read_xml(cwd + '\\Registros_de_execução\\Registros.xml')[
             ['HOSTNAME', 'ID_TEAMVIEWER', 'DATA_HORA_ULTIMA_EXEC']]
-        print(df_terminais)
+
         for idx, row in df_terminais.iterrows():
-            print(row)
             dif_tempo = datetime.strptime(datetime.now().strftime('%d/%m/%Y %H:%M:%S'),
                                           '%d/%m/%Y %H:%M:%S') - datetime.strptime(row['DATA_HORA_ULTIMA_EXEC'],
                                                                                    '%d/%m/%Y %H:%M:%S')
@@ -244,7 +247,10 @@ def Busca_Terminais_Inativo(topdesk):
                                    f'Terminal desligado e/ou offline há mais de 15 minutos\r\n\r\nO terminal {row["HOSTNAME"]} ' \
                                    f'pode estar desligado ou sem conexão com a internet, pois não há registros de ' \
                                    f'execução com exito nos ultimos 15 minutos.\r\n\r '
-                Abre_Chamado(topdesk, row["HOSTNAME"], conteudo_chamado, f'{row["HOSTNAME"]} - Terminal fora de operação')
+
+                # Argumentos de função (parametros do arquivo configs.json, conteudo do chamado, breve descrição do chamado)
+                Abre_Chamado(topdesk, row["HOSTNAME"], conteudo_chamado,
+                             f'{row["HOSTNAME"]} - Terminal fora de operação')
 
 
     except Exception as error:
@@ -269,9 +275,9 @@ if __name__ == "__main__":
 
     # Verifica se quem está rodando o programa é o servidor ou não
     if socket.gethostname() != configs['SERVIDOR']:
-        #log.debug('Entrando no IF! Identificou que não se trata do nó servidor')
+        # log.debug('Entrando no IF! Identificou que não se trata do nó servidor')
         if 'MultiClubes.Kiosk.UI.exe' not in Obtem_Lista_Processos():
-            # Limpa pasta temp. do utilizador corrente
+            # Limpa pasta temp. Do utilizador logado
             dir = "C:/Users/" + os.getlogin() + "/AppData/Local/Temp/"
             print(dir)
             LimpaTemp(dir)
@@ -291,15 +297,19 @@ if __name__ == "__main__":
                                        f'Kiosk com problemas de execução\r\n\r\nO Multiclubes Autoatendimento não pôde ser ' \
                                        f'executado no ' \
                                        f'autoatendimento {socket.gethostname()}.\r\n\r '
-                    Abre_Chamado(Conexao_API(ConfigsJSON()), socket.gethostname(), conteudo_chamado, f'{socket.gethostname()} - Multiclubes Kiosk não abre')
+                    Abre_Chamado(Conexao_API(ConfigsJSON()), socket.gethostname(), conteudo_chamado,
+                                 f'{socket.gethostname()} - Multiclubes Kiosk não abre')
                 else:
+                    # Armazena no log a informação de que o Multiclubes executou corretamente
                     log.info(
                         'O MULTICLUBES EXECUTOU NO COMPUTADOR ID TEAM VIEWER: ' + GetTeamViewer() + ' COM SUCESSO!')
                     Guarda_Registro(socket.gethostname())
         else:
             log.info('O MULTICLUBES já esta em execução ID TEAMVIEWER: ' + GetTeamViewer() + ' !')
             Guarda_Registro(socket.gethostname())
-
+    # Caso identifique que o computador que executa o programa se trata do nó servidor, então ele entra nesta condição elif
     elif socket.gethostname() == configs['SERVIDOR']:
+        # Chamada da função que verifica se a senha de API esta próxima de expirar
         VerificaValidadeSenhaApi()
+        # Varredura feita pelo nó servidor às últimas execuções dos terminais de autoatendimento
         Busca_Terminais_Inativo(Conexao_API(configs))
