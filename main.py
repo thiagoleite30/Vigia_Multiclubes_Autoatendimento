@@ -166,7 +166,7 @@ def Abre_Chamado(topdesk, hostname, conteudo_chamado, breve_descrição):
         else:
             # chamado = verifica[1]
             # Registra no arquivo de log a já existência de um chamado para o terminal
-            log.info(f'Já existe um chamado ({verifica[1]}) aberto para o termina {socket.gethostname()}')
+            log.info(f'Já existe um chamado ({verifica[1]}) aberto para o termina {hostname}')
     except Exception as error:
         log.error(error)
 
@@ -223,7 +223,7 @@ def Guarda_Registro(hostname):
 
 
 # Função que busca no arquivo de registro algum terminal que esteja a mais de 15 minutos sem executar
-def Busca_Terminais_Inativo(topdesk):
+def Busca_Terminais_Inativo():
     try:
         # Lê arquivo .xml que guarda os valores
         # cols = [['HOSTNAME', 'ID_TEAMVIEWER', 'DATA_HORA_ULTIMA_EXEC']]
@@ -249,7 +249,7 @@ def Busca_Terminais_Inativo(topdesk):
                                    f'execução com exito nos ultimos 15 minutos.\r\n\r '
 
                 # Argumentos de função (parametros do arquivo configs.json, conteudo do chamado, breve descrição do chamado)
-                Abre_Chamado(topdesk, row["HOSTNAME"], conteudo_chamado,
+                Abre_Chamado(Conexao_API(ConfigsJSON()), row["HOSTNAME"], conteudo_chamado,
                              f'{row["HOSTNAME"]} - Terminal fora de operação')
 
 
@@ -288,7 +288,7 @@ if __name__ == "__main__":
             except Exception as error:
                 log.error(error)
             else:
-                time.sleep(15)
+                time.sleep(30)
                 if 'MultiClubes.Kiosk.UI.exe' not in Obtem_Lista_Processos():
                     log.info('O MULTICLUBES NÃO EXECUTOU NO COMPUTADOR ID TEAM VIEWER: ' + GetTeamViewer() + ' !')
                     # Criada variável que receberá o conteúdo do chamado que será aberto
@@ -312,4 +312,4 @@ if __name__ == "__main__":
         # Chamada da função que verifica se a senha de API esta próxima de expirar
         VerificaValidadeSenhaApi()
         # Varredura feita pelo nó servidor às últimas execuções dos terminais de autoatendimento
-        Busca_Terminais_Inativo(Conexao_API(configs))
+        Busca_Terminais_Inativo()

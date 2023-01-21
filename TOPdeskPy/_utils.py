@@ -98,22 +98,22 @@ class utils:
                     uri += '&query={}'.format(query)
                 else:
                     uri += '?query={}'.format(query)
-        return requests.get(self._topdesk_url + uri, headers=headers)
+        return requests.get(self._topdesk_url + uri, headers=headers, verify="cacert.pem")
 
     def post_to_topdesk(self, uri, json_body):
         headers = {'Authorization':"Basic {}".format(self._credpair), "Accept":'application/json', \
             'Content-type': 'application/json'}
-        return requests.post(self._topdesk_url + uri, headers=headers, json=json_body)
+        return requests.post(self._topdesk_url + uri, headers=headers, json=json_body, verify="cacert.pem")
 
     def put_to_topdesk(self, uri, json_body):
         headers = {'Authorization':"Basic {}".format(self._credpair), "Accept":'application/json', \
             'Content-type': 'application/json'}
-        return requests.put(self._topdesk_url + uri, headers=headers, json=json_body)
+        return requests.put(self._topdesk_url + uri, headers=headers, json=json_body, verify="cacert.pem")
 
     def delete_from_topdesk(self, uri, json_body):
         headers = {'Authorization':"Basic {}".format(self._credpair), "Accept":'application/json', \
             'Content-type': 'application/json'}
-        return requests.delete(self._topdesk_url + uri, headers=headers, json=json_body)
+        return requests.delete(self._topdesk_url + uri, headers=headers, json=json_body, verify="cacert.pem")
 
     def add_id_list(self, id_list):
         param = []
