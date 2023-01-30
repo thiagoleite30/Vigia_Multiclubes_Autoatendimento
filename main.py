@@ -187,7 +187,7 @@ def GetTeamViewer():
 
 
 # Guarda registro de execução
-def Guarda_Registro(hostname, DateTodayStr):
+"""def Guarda_Registro(hostname):
     try:
         cwd = os.getcwd()
         if not os.path.exists(cwd + '\\Registros_de_execução\\Registros_' + hostname + '.xml'):
@@ -220,6 +220,25 @@ def Guarda_Registro(hostname, DateTodayStr):
             # df_terminais.to_csv(cwd+'\\Registros_de_execução\\Registros.csv')
             df_terminais.to_xml(cwd + '\\Registros_de_execução\\Registros_' + hostname + '.xml')
     except Exception as error:
+        log.error(error)"""
+
+def Guarda_Registro(hostname):
+    try:
+        cwd = os.getcwd()
+        df_terminais = pd.DataFrame(columns=['HOSTNAME', 'ID_TEAMVIEWER', 'DATA_HORA_ULTIMA_EXEC'])
+        df_terminais = pd.concat([df_terminais, pd.DataFrame([{'HOSTNAME': hostname,
+                                                                   'ID_TEAMVIEWER': GetTeamViewer(),
+                                                                   'DATA_HORA_ULTIMA_EXEC': datetime.now().strftime(
+                                                                       '%d/%m/%Y %H:%M:%S')}])])
+        df_terminais.drop_duplicates(subset=['HOSTNAME'], keep='last', inplace=True)
+        df_terminais.reset_index(drop=True, inplace=True)
+        cwd = os.getcwd()
+        print(cwd)
+        # df_terminais.to_csv(cwd+'\\Registros_de_execução\\Registros.csv')
+        print(df_terminais)
+        df_terminais.to_xml(cwd + '\\Registros_de_execução\\Registros_' + hostname + '.xml')
+
+    except Exception as error:
         log.error(error)
 
 
@@ -229,13 +248,14 @@ def Busca_Terminais_Inativo():
         # Lê arquivo .xml que guarda os valores
         # cols = [['HOSTNAME', 'ID_TEAMVIEWER', 'DATA_HORA_ULTIMA_EXEC']]
         cwd = os.getcwd()
-        dir = os.listdir(cwd + '/Registros_de_execução')
+        dir = os.listdir(cwd + '\\Registros_de_execução')
         cols = ['HOSTNAME', 'ID_TEAMVIEWER', 'DATA_HORA_ULTIMA_EXEC']
         if len(dir) > 0:
             for file in dir:
                 arquivo = cwd + '\\Registros_de_execução\\' + file
                 print(f'Mostrando: {arquivo}')
                 df_terminais = pd.read_xml(arquivo)
+                log.debug(f'Leu o arquivo {arquivo}')
 
                 for idx, row in df_terminais.iterrows():
                     dif_tempo = datetime.strptime(datetime.now().strftime('%d/%m/%Y %H:%M:%S'),
@@ -246,6 +266,9 @@ def Busca_Terminais_Inativo():
                             'Abrindo chamado para o computador {} pois já se passaram 15 minutos desde a '
                             'ultima execução da tarefa'
                             .format(row['HOSTNAME']))
+                        log.debug('Abrindo chamado para o computador {} pois já se passaram 15 minutos desde a '
+                                  'ultima execução da tarefa'
+                                  .format(row['HOSTNAME']))
 
                         # Criando variável com conteúdo do chamado
                         conteudo_chamado = f'\nID do Team Viewer\r\n- {row["ID_TEAMVIEWER"]} \r\n\r\nDescreva detalhadamente seu ' \
@@ -256,9 +279,10 @@ def Busca_Terminais_Inativo():
 
                         # Argumentos de função (parametros do arquivo configs.json, conteudo do chamado, breve descrição do chamado)
                         print(conteudo_chamado)
-                        break
                         Abre_Chamado(Conexao_API(ConfigsJSON()), row["HOSTNAME"], conteudo_chamado,
                                      f'{row["HOSTNAME"]} - Terminal fora de operação')
+                    else:
+                        log.debug('O registro do computador {} não indica que o mesmo esteja inativo'.format(row['HOSTNAME']))
         else:
             log.info('A Pasta de Registros de Execução esta vazia!')
     except Exception as error:
@@ -316,7 +340,7 @@ if __name__ == "__main__":
             log.info('O MULTICLUBES já esta em execução ID TEAMVIEWER: ' + GetTeamViewer() + ' !')
             if not os.path.exists('Registros_de_execução'):
                 os.makedirs('Registros_de_execução')
-            Guarda_Registro(socket.gethostname(), DateTodayStr)
+            Guarda_Registro(socket.gethostname())
     # Caso identifique que o computador que executa o programa se trata do nó servidor, então ele entra nesta condição elif
     elif socket.gethostname() == configs['SERVIDOR']:
         # Chamada da função que verifica se a senha de API esta próxima de expirar
