@@ -187,7 +187,7 @@ def GetTeamViewer():
 
 
 # Guarda registro de execução
-def Guarda_Registro(hostname, DateTodayStr):
+"""def Guarda_Registro(hostname, DateTodayStr):
     try:
         cwd = os.getcwd()
         if not os.path.exists(cwd + '\\Registros_de_execução\\Registros_' + hostname + '.xml'):
@@ -219,6 +219,24 @@ def Guarda_Registro(hostname, DateTodayStr):
             print(df_terminais)
             # df_terminais.to_csv(cwd+'\\Registros_de_execução\\Registros.csv')
             df_terminais.to_xml(cwd + '\\Registros_de_execução\\Registros_' + hostname + '.xml')
+    except Exception as error:
+        log.error(error)"""
+
+def Guarda_Registro(hostname, DateTodayStr):
+    try:
+        cwd = os.getcwd()
+        df_terminais = pd.DataFrame(columns=['HOSTNAME', 'ID_TEAMVIEWER', 'DATA_HORA_ULTIMA_EXEC'])
+        df_terminais = pd.concat([df_terminais, pd.DataFrame([{'HOSTNAME': hostname,
+                                                                   'ID_TEAMVIEWER': GetTeamViewer(),
+                                                                   'DATA_HORA_ULTIMA_EXEC': datetime.now().strftime(
+                                                                       '%d/%m/%Y %H:%M:%S')}])])
+        df_terminais.drop_duplicates(subset=['HOSTNAME'], keep='last', inplace=True)
+        df_terminais.reset_index(drop=True, inplace=True)
+        cwd = os.getcwd()
+        print(cwd)
+        # df_terminais.to_csv(cwd+'\\Registros_de_execução\\Registros.csv')
+        print(df_terminais)
+        df_terminais.to_xml(cwd + '\\Registros_de_execução\\Registros_' + hostname + '.xml')
     except Exception as error:
         log.error(error)
 
