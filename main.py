@@ -5,6 +5,7 @@ import shutil
 import socket
 import time
 import winreg
+import lxml
 from datetime import date, datetime
 from winreg import HKEY_LOCAL_MACHINE
 
@@ -222,7 +223,7 @@ def GetTeamViewer():
     except Exception as error:
         log.error(error)"""
 
-def Guarda_Registro(hostname, DateTodayStr):
+def Guarda_Registro(hostname):
     try:
         cwd = os.getcwd()
         df_terminais = pd.DataFrame(columns=['HOSTNAME', 'ID_TEAMVIEWER', 'DATA_HORA_ULTIMA_EXEC'])
@@ -239,6 +240,7 @@ def Guarda_Registro(hostname, DateTodayStr):
         df_terminais.to_xml(cwd + '\\Registros_de_execução\\Registros_' + hostname + '.xml')
     except Exception as error:
         log.error(error)
+        pass
 
 
 # Função que busca no arquivo de registro algum terminal que esteja a mais de 15 minutos sem executar
@@ -274,14 +276,20 @@ def Busca_Terminais_Inativo():
 
                         # Argumentos de função (parametros do arquivo configs.json, conteudo do chamado, breve descrição do chamado)
                         print(conteudo_chamado)
-                        break
+                        #break
                         Abre_Chamado(Conexao_API(ConfigsJSON()), row["HOSTNAME"], conteudo_chamado,
                                      f'{row["HOSTNAME"]} - Terminal fora de operação')
+                    else:
+                        log.info('Não identificada inatividade do Multiclubes Autoatendimento no terminal {}'.format(row['HOSTNAME']))
         else:
             log.info('A Pasta de Registros de Execução esta vazia!')
     except Exception as error:
         log.error(error)
 
+"""def get_GPResult():
+    os.system("gpresult /H C:/Users/" + os.getlogin() + "/GPResult.html")
+    #df_GPResult = pd.read_html("C:/Users/" + os.getlogin() + "/GPResult.html", flavor='lxml')[5]
+    #df_GPResult.to_csv("C:/Users/" + os.getlogin() + "/GPResult.csv", header=True)"""
 
 if __name__ == "__main__":
 
@@ -302,6 +310,7 @@ if __name__ == "__main__":
     # Verifica se quem está rodando o programa é o servidor ou não
     if socket.gethostname() != configs['SERVIDOR']:
         # log.debug('Entrando no IF! Identificou que não se trata do nó servidor')
+        #get_GPResult()
         if 'MultiClubes.Kiosk.UI.exe' not in Obtem_Lista_Processos():
             # Limpa pasta temp. Do utilizador logado
             dir = "C:/Users/" + os.getlogin() + "/AppData/Local/Temp/"
@@ -334,7 +343,7 @@ if __name__ == "__main__":
             log.info('O MULTICLUBES já esta em execução ID TEAMVIEWER: ' + GetTeamViewer() + ' !')
             if not os.path.exists('Registros_de_execução'):
                 os.makedirs('Registros_de_execução')
-            Guarda_Registro(socket.gethostname(), DateTodayStr)
+            Guarda_Registro(socket.gethostname())
     # Caso identifique que o computador que executa o programa se trata do nó servidor, então ele entra nesta condição elif
     elif socket.gethostname() == configs['SERVIDOR']:
         # Chamada da função que verifica se a senha de API esta próxima de expirar
